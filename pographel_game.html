@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pographel Space Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2e, #16213e, #1a1a2e);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            touch-action: manipulation;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(180deg, #000428, #004e92);
+        }
+
+        .game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .high-score {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .coins-display {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            font-size: 18px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .lives-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: #ff4757;
+        }
+
+        .menu-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .game-title {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(255,107,107,0.5)); }
+            to { filter: drop-shadow(0 0 20px rgba(78,205,196,0.8)); }
+        }
+
+        .menu-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            min-width: 200px;
+        }
+
+        .menu-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .game-over-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+            pointer-events: auto;
+        }
+
+        .final-score {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .upgrade-shop {
+            display: none;
+            position: absolute;
+            width: 90%;
+            max-width: 400px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 25;
+            border: 2px solid #00ffff;
+            pointer-events: auto;
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        .upgrade-button {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .upgrade-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+
+        .channel-banner {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 16px;
+            color: #00ffff;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #fff;
+            text-align: center;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas class="game-canvas" id="gameCanvas"></canvas>
+        
+        <div class="ui-overlay">
+            <div class="score-display">Score: <span id="scoreValue">0</span></div>
+            <div class="high-score">Best: <span id="highScoreValue">0</span></div>
+            <div class="coins-display">💰 <span id="coinsValue">0</span></div>
+            <div class="lives-display">❤️ <span id="livesValue">3</span></div>
+            <div class="channel-banner">@Pographel</div>
+        </div>
+
+        <div class="menu-screen" id="menuScreen">
+            <h1 class="game-title">POGRAPHEL<br>SPACE RUNNER</h1>
+            <button class="menu-button" onclick="startGame()">🚀 START GAME</button>
+            <button class="menu-button" onclick="showUpgrades()">⚡ UPGRADES</button>
+            <div class="instructions">
+                <p>🎯 Collect blue crystals for points and coins</p>
+                <p>❌ Avoid red obstacles</p>
+                <p>⚡ Grab power-ups for special abilities</p>
+                <p>📱 Tap LEFT/RIGHT sides to move</p>
+                <p>🏆 Beat your high score!</p>
+            </div>
+        </div>
+
+        <div class="upgrade-shop" id="upgradeShop">
+            <h3 style="text-align: center; margin-bottom: 20px; color: #00ffff;">🛒 UPGRADE SHOP</h3>
+            <div class="upgrade-item">
+                <div>🚀 Extra Life<br><small>Start with more lives</small></div>
+                <button class="upgrade-button" id="lifeUpgrade" onclick="buyUpgrade('life')">100 💰</button>
+            </div>
+            <div class="upgrade-item">
+                <div>💎 Crystal Value<br><small>More coins per crystal</small></div>
+                <button class="upgrade-button" id="crystalUpgrade" onclick="buyUpgrade('crystal')">150 💰</button>
+            </div>
+            <div class="upgrade-item">
+                <div>🛡️ Shield Duration<br><small>Longer protection</small></div>
+                <button class="upgrade-button" id="shieldUpgrade" onclick="buyUpgrade('shield')">200 💰</button>
+            </div>
+            <div class="upgrade-item">
+                <div>⚡ Power Spawn<br><small>More power-ups</small></div>
+                <button class="upgrade-button" id="powerUpgrade" onclick="buyUpgrade('power')">250 💰</button>
+            </div>
+            <button class="menu-button" onclick="closeUpgrades()" style="width: 100%; margin-top: 20px;">❌ CLOSE</button>
+        </div>
+
+        <div class="game-over-screen" id="gameOverScreen">
+            <h2 style="color: #ff6b6b; margin-bottom: 20px;">GAME OVER!</h2>
+            <div class="final-score">Score: <span id="finalScore">0</span></div>
+            <div style="color: #ffd700; margin-bottom: 30px;">Coins Earned: +<span id="coinsEarned">0</span></div>
+            <button class="menu-button" onclick="restartGame()">🔄 PLAY AGAIN</button>
+            <button class="menu-button" onclick="showMenu()">🏠 MAIN MENU</button>
+        </div>
+
+        <div class="controls-hint" id="controlsHint" style="display: none;">
+            Tap LEFT ← → RIGHT sides to move
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let gameState = 'menu';
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let gameSpeed = 3;
+        let spawnRate = 0.02;
+
+        // Persistent data
+        let coins = parseInt(localStorage.getItem('pographelCoins') || '0');
+        let highScore = parseInt(localStorage.getItem('pographelHighScore') || '0');
+        let upgrades = {
+            life: parseInt(localStorage.getItem('pographelLifeUpgrade') || '0'),
+            crystal: parseInt(localStorage.getItem('pographelCrystalUpgrade') || '0'),
+            shield: parseInt(localStorage.getItem('pographelShieldUpgrade') || '0'),
+            power: parseInt(localStorage.getItem('pographelPowerUpgrade') || '0')
+        };
+
+        // Player
+        const player = {
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 50,
+            speed: 8,
+            shielded: false,
+            shieldTime: 0,
+            invulnerable: false,
+            invulnerableTime: 0
+        };
+
+        // Game objects
+        let obstacles = [];
+        let crystals = [];
+        let powerUps = [];
+        let particles = [];
+
+        // Initialize
+        function init() {
+            resizeCanvas();
+            resetPlayer();
+            updateUI();
+            gameLoop();
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            resetPlayer();
+        }
+
+        function resetPlayer() {
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - player.height - 100;
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Update score
+            score += 1;
+            
+            // Increase difficulty gradually
+            if (score % 500 === 0) {
+                gameSpeed += 0.5;
+                spawnRate += 0.002;
+            }
+
+            // Update shield
+            if (player.shielded) {
+                player.shieldTime--;
+                if (player.shieldTime <= 0) {
+                    player.shielded = false;
+                }
+            }
+
+            // Update invulnerability
+            if (player.invulnerable) {
+                player.invulnerableTime--;
+                if (player.invulnerableTime <= 0) {
+                    player.invulnerable = false;
+                }
+            }
+
+            // Spawn obstacles
+            if (Math.random() < spawnRate) {
+                spawnObstacle();
+            }
+
+            // Spawn crystals
+            if (Math.random() < 0.015) {
+                spawnCrystal();
+            }
+
+            // Spawn power-ups
+            if (Math.random() < 0.008 + (upgrades.power * 0.002)) {
+                spawnPowerUp();
+            }
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obstacle = obstacles[i];
+                obstacle.y += gameSpeed;
+
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+
+                // Collision with player
+                if (!player.shielded && !player.invulnerable && checkCollision(player, obstacle)) {
+                    takeDamage();
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Update crystals
+            for (let i = crystals.length - 1; i >= 0; i--) {
+                const crystal = crystals[i];
+                crystal.y += gameSpeed;
+                crystal.rotation += 0.1;
+
+                if (crystal.y > canvas.height) {
+                    crystals.splice(i, 1);
+                    continue;
+                }
+
+                // Collision with player
+                if (checkCollision(player, crystal)) {
+                    const coinValue = 2 + upgrades.crystal;
+                    coins += coinValue;
+                    score += 10;
+                    crystals.splice(i, 1);
+                    createParticles(crystal.x + crystal.width/2, crystal.y + crystal.height/2, '#00ffff');
+                }
+            }
+
+            // Update power-ups
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const powerUp = powerUps[i];
+                powerUp.y += gameSpeed;
+                powerUp.pulse += 0.2;
+
+                if (powerUp.y > canvas.height) {
+                    powerUps.splice(i, 1);
+                    continue;
+                }
+
+                // Collision with player
+                if (checkCollision(player, powerUp)) {
+                    activatePowerUp(powerUp.type);
+                    powerUps.splice(i, 1);
+                    createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#ffd700');
+                }
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life--;
+                particle.alpha = particle.life / particle.maxLife;
+
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            updateUI();
+        }
+
+        function render() {
+            // Clear canvas with gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#000428');
+            gradient.addColorStop(1, '#004e92');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stars
+            drawStars();
+
+            // Draw player
+            drawPlayer();
+
+            // Draw obstacles
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = '#ff4757';
+                ctx.shadowColor = '#ff4757';
+                ctx.shadowBlur = 15;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.shadowBlur = 0;
+
+                // Add danger glow
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obstacle.x - 2, obstacle.y - 2, obstacle.width + 4, obstacle.height + 4);
+            });
+
+            // Draw crystals
+            crystals.forEach(crystal => {
+                ctx.save();
+                ctx.translate(crystal.x + crystal.width/2, crystal.y + crystal.height/2);
+                ctx.rotate(crystal.rotation);
+
+                ctx.fillStyle = '#00ffff';
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 20;
+                ctx.fillRect(-crystal.width/2, -crystal.height/2, crystal.width, crystal.height);
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
+            });
+
+            // Draw power-ups
+            powerUps.forEach(powerUp => {
+                const pulseFactor = 1 + Math.sin(powerUp.pulse) * 0.2;
+                const size = powerUp.width * pulseFactor;
+                
+                ctx.fillStyle = powerUp.type === 'shield' ? '#00ff00' : '#ffd700';
+                ctx.shadowColor = powerUp.type === 'shield' ? '#00ff00' : '#ffd700';
+                ctx.shadowBlur = 25;
+                
+                ctx.beginPath();
+                ctx.arc(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, size/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw particles
+            particles.forEach(particle => {
+                ctx.globalAlpha = particle.alpha;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function drawStars() {
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 137) % canvas.width;
+                const y = (i * 101 + score) % canvas.height;
+                const size = (i % 3) + 1;
+                ctx.globalAlpha = 0.3 + (i % 5) * 0.15;
+                ctx.fillRect(x, y, size, size);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawPlayer() {
+            const centerX = player.x + player.width/2;
+            const centerY = player.y + player.height/2;
+
+            // Draw shield
+            if (player.shielded) {
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 4;
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, player.width/2 + 15, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // Invulnerability flash
+            if (player.invulnerable && Math.floor(Date.now() / 100) % 2) {
+                ctx.globalAlpha = 0.5;
+            }
+
+            // Draw player ship
+            ctx.fillStyle = '#4ecdc4';
+            ctx.shadowColor = '#4ecdc4';
+            ctx.shadowBlur = 15;
+
+            // Ship body
+            ctx.beginPath();
+            ctx.moveTo(centerX, player.y);
+            ctx.lineTo(player.x + player.width * 0.8, player.y + player.height);
+            ctx.lineTo(player.x + player.width * 0.2, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Ship details
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(centerX - 5, player.y + 15, 10, 20);
+
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+        }
+
+        function spawnObstacle() {
+            const size = 40 + Math.random() * 30;
+            obstacles.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size
+            });
+        }
+
+        function spawnCrystal() {
+            crystals.push({
+                x: Math.random() * (canvas.width - 30),
+                y: -30,
+                width: 30,
+                height: 30,
+                rotation: 0
+            });
+        }
+
+        function spawnPowerUp() {
+            powerUps.push({
+                x: Math.random() * (canvas.width - 40),
+                y: -40,
+                width: 40,
+                height: 40,
+                type: Math.random() < 0.6 ? 'shield' : 'slow',
+                pulse: 0
+            });
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x + (Math.random() - 0.5) * 20,
+                    y: y + (Math.random() - 0.5) * 20,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    color: color,
+                    size: Math.random() * 4 + 2,
+                    life: 60,
+                    maxLife: 60,
+                    alpha: 1
+                });
+            }
+        }
+
+        function activatePowerUp(type) {
+            if (type === 'shield') {
+                player.shielded = true;
+                player.shieldTime = 300 + (upgrades.shield * 100);
+            } else if (type === 'slow') {
+                const originalSpeed = gameSpeed;
+                gameSpeed *= 0.5;
+                setTimeout(() => { 
+                    gameSpeed = originalSpeed; 
+                }, 5000);
+            }
+        }
+
+        function takeDamage() {
+            lives--;
+            player.invulnerable = true;
+            player.invulnerableTime = 120;
+            
+            if (lives <= 0) {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            gameState = 'gameOver';
+
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('pographelHighScore', highScore);
+            }
+
+            // Calculate coin reward
+            const coinsEarned = Math.floor(score / 50);
+            coins += coinsEarned;
+            localStorage.setItem('pographelCoins', coins);
+
+            // Show game over screen
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('coinsEarned').textContent = coinsEarned;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        function updateUI() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('coinsValue').textContent = coins;
+            document.getElementById('highScoreValue').textContent = highScore;
+            document.getElementById('livesValue').textContent = lives;
+            updateUpgradeButtons();
+        }
+
+        function updateUpgradeButtons() {
+            const costs = {
+                life: 100 + (upgrades.life * 50),
+                crystal: 150 + (upgrades.crystal * 75),
+                shield: 200 + (upgrades.shield * 100),
+                power: 250 + (upgrades.power * 125)
+            };
+
+            Object.keys(costs).forEach(type => {
+                const button = document.getElementById(type + 'Upgrade');
+                const cost = costs[type];
+                button.textContent = cost + ' 💰';
+                button.disabled = coins < cost;
+            });
+        }
+
+        // Controls
+        canvas.addEventListener('touchstart', handleTouch, { passive: false });
+        canvas.addEventListener('click', handleClick);
+
+        function handleTouch(e) {
+            e.preventDefault();
+            if (gameRunning) {
+                const touch = e.touches[0];
+                movePlayer(touch.clientX);
+            }
+        }
+
+        function handleClick(e) {
+            if (gameRunning) {
+                movePlayer(e.clientX);
+            }
+        }
+
+        function movePlayer(clientX) {
+            const moveDistance = 80;
+            if (clientX < canvas.width / 2) {
+                // Move left
+                player.x = Math.max(0, player.x - moveDistance);
+            } else {
+                // Move right
+                player.x = Math.min(canvas.width - player.width, player.x + moveDistance);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (gameRunning) {
+                const moveDistance = 80;
+                if (e.key === 'ArrowLeft' || e.key === 'a') {
+                    player.x = Math.max(0, player.x - moveDistance);
+                } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                    player.x = Math.min(canvas.width - player.width, player.x + moveDistance);
+                }
+            }
+        });
+
+        // Game functions
+        function startGame() {
+            gameState = 'playing';
+            gameRunning = true;
+            score = 0;
+            lives = 3 + upgrades.life;
+            gameSpeed = 3;
+            spawnRate = 0.02;
+            
+            // Reset arrays
+            obstacles = [];
+            crystals = [];
+            powerUps = [];
+            particles = [];
+            
+            // Reset player
+            resetPlayer();
+            player.shielded = false;
+            player.invulnerable = false;
+            
+            // Hide menu
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // Show controls hint briefly
+            const hint = document.getElementById('controlsHint');
+            hint.style.display = 'block';
+            setTimeout(() => { hint.style.display = 'none'; }, 3000);
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function showMenu() {
+            gameState = 'menu';
+            gameRunning = false;
+            document.getElementById('menuScreen').style.display = 'flex';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('upgradeShop').style.display = 'none';
+            updateUI();
+        }
+
+        function showUpgrades() {
+            document.getElementById('upgradeShop').style.display = 'block';
+            updateUpgradeButtons();
+        }
+
+        function closeUpgrades() {
+            document.getElementById('upgradeShop').style.display = 'none';
+        }
+
+        function buyUpgrade(type) {
+            const costs = {
+                life: 100 + (upgrades.life * 50),
+                crystal: 150 + (upgrades.crystal * 75),
+                shield: 200 + (upgrades.shield * 100),
+                power: 250 + (upgrades.power * 125)
+            };
+
+            const cost = costs[type];
+            
+            if (coins >= cost) {
+                coins -= cost;
+                upgrades[type]++;
+                
+                // Save to localStorage
+                localStorage.setItem('pographelCoins', coins);
+                localStorage.setItem(`pographel${type.charAt(0).toUpperCase() + type.slice(1)}Upgrade`, upgrades[type]);
+                
+                updateUI();
+            }
+        }
+
+        // Initialize game
+        window.addEventListener('load', init);
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>
